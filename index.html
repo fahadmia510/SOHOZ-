@@ -19,31 +19,10 @@
         const auth = getAuth(app);
         const db = getDatabase(app);
 
-        // গ্লোবাল ফি কনফিগারেশন
+        // গ্লোবাল কনফিগারেশন
         const AGENCY_FEE_PERCENT = 0.05; 
         const USER_FEE_PERCENT = 0.05;   
         const REFERRAL_COMMISSION_PERCENT = 0.01; 
-
-        // উইন্ডো অবজেক্টে ফাংশন গ্লোবাল করা
-        window.handleAuth = handleAuth;
-        window.toggleAuthMode = toggleAuthMode;
-        window.handleLogout = handleLogout;
-        window.agencyDeposit = agencyDeposit;
-        window.upgradeAgency = upgradeAgency;
-        window.uploadTask = uploadTask;
-        window.agencyDecision = agencyDecision;
-        window.verifyUserWithNid = verifyUserWithNid;
-        window.upgradeUser = upgradeUser;
-        window.takeSkillTest = takeSkillTest;
-        window.claimTask = claimTask;
-        window.lockTask = lockTask;
-        window.sendMessage = sendMessage;
-        window.submitReferral = submitReferral;
-        window.submitAdminCredentials = submitAdminCredentials;
-        window.closeAdminModal = closeAdminModal;
-        window.adminReleasePayment = adminReleasePayment;
-        window.adminDeleteUser = adminDeleteUser;
-        window.adminDeleteTask = adminDeleteTask;
 
         let currentUserData = null;
         let globalSystemState = {};
@@ -51,55 +30,38 @@
         // অ্যালার্ট সিস্টেম
         function showAlert(msg) {
             const box = document.getElementById('alertBox');
-            box.innerText = msg;
-            box.style.display = 'block';
-            setTimeout(() => { box.style.display = 'none'; }, 5000);
+            if (box) {
+                box.innerText = msg;
+                box.style.display = 'block';
+                setTimeout(() => { box.style.display = 'none'; }, 5000);
+            }
         }
 
-        // অথেনটিকেশন স্টেট পর্যবেক্ষণ
-        onAuthStateChanged(auth, async (user) => {
-            if (user) {
-                const snapshot = await get(ref(db, 'users/' + user.uid));
-                if (snapshot.exists()) {
-                    currentUserData = snapshot.val();
-                    currentUserData.uid = user.uid;
-                    showMainPlatform();
-                } else {
-                    // যদি ডাটাবেজে ডাটা আসতে সামান্য দেরি হয়, তবে আবার ট্রাই করবে
-                    setTimeout(async () => {
-                        const retrySnapshot = await get(ref(db, 'users/' + user.uid));
-                        if (retrySnapshot.exists()) {
-                            currentUserData = retrySnapshot.val();
-                            currentUserData.uid = user.uid;
-                            showMainPlatform();
-                        }
-                    }, 1000);
-                }
+        // স্ক্রিন ও নেভিগেশন কন্ট্রোল
+        function showAuthScreen() {
+            document.getElementById('authScreen').classList.remove('hidden');
+            document.getElementById('mainPlatform').classList.add('hidden');
+            document.getElementById('mainNavbar').classList.add('hidden');
+        }
+
+        function showMainPlatform() {
+            if (!currentUserData) return;
+            document.getElementById('authScreen').classList.add('hidden');
+            document.getElementById('mainPlatform').classList.remove('hidden');
+            document.getElementById('mainNavbar').classList.remove('hidden');
+            
+            document.getElementById('displayUserName').innerText = currentUserData.name + ` (${currentUserData.role.toUpperCase()})`;
+            
+            if (currentUserData.role === 'agency') {
+                document.getElementById('agencySection').classList.remove('hidden');
+                document.getElementById('workerSection').classList.add('hidden');
             } else {
-                currentUserData = null;
-                showAuthScreen();
+                document.getElementById('agencySection').classList.add('hidden');
+                document.getElementById('workerSection').classList.remove('hidden');
             }
-        });
+        }
 
-        // লাইভ ডাটা সিঙ্ক
-        onValue(ref(db), (snapshot) => {
-            if (snapshot.exists()) {
-                globalSystemState = snapshot.val();
-                document.getElementById('jsonDisplay').textContent = JSON.stringify(globalSystemState, null, 4);
-                
-                // ইউজার লগইন থাকা অবস্থায় রিয়েল-টাইম প্রোফাইল ডাটা সিঙ্ক ধরে রাখা
-                if (auth.currentUser && globalSystemState.users && globalSystemState.users[auth.currentUser.uid]) {
-                    currentUserData = globalSystemState.users[auth.currentUser.uid];
-                    currentUserData.uid = auth.currentUser.uid;
-                    showMainPlatform(); 
-                }
-                
-                updateUI();
-                updateAdminPanel();
-            }
-        });
-
-        // লগইন ও রেজিস্ট্রেশন প্রসেস
+        // অথেনটিকেশন ও সাইন-আউট ফাংশন
         async function handleAuth() {
             const email = document.getElementById('authEmail').value.trim();
             const password = document.getElementById('authPassword').value.trim();
@@ -171,30 +133,7 @@
             });
         }
 
-        function showAuthScreen() {
-            document.getElementById('authScreen').classList.remove('hidden');
-            document.getElementById('mainPlatform').classList.add('hidden');
-            document.getElementById('mainNavbar').classList.add('hidden');
-        }
-
-        function showMainPlatform() {
-            if (!currentUserData) return;
-            document.getElementById('authScreen').classList.add('hidden');
-            document.getElementById('mainPlatform').classList.remove('hidden');
-            document.getElementById('mainNavbar').classList.remove('hidden');
-            
-            document.getElementById('displayUserName').innerText = currentUserData.name + ` (${currentUserData.role.toUpperCase()})`;
-            
-            if (currentUserData.role === 'agency') {
-                document.getElementById('agencySection').classList.remove('hidden');
-                document.getElementById('workerSection').classList.add('hidden');
-            } else {
-                document.getElementById('agencySection').classList.add('hidden');
-                document.getElementById('workerSection').classList.remove('hidden');
-            }
-        }
-
-        // এজেন্সি: ডিপোজিট
+        // এজেন্সি একশনস
         async function agencyDeposit() {
             if (!currentUserData) return;
             const newBalance = (currentUserData.balance || 0) + 500;
@@ -202,7 +141,6 @@
             showAlert("৳৫০০ ডিপোজিট সফল হয়েছে!");
         }
 
-        // এজেন্সি: প্রিমিয়াম সাবস্ক্রিপশন
         async function upgradeAgency() {
             if (currentUserData.balance < 200) { showAlert("পর্যাপ্ত ব্যালেন্স নেই! প্রিমিয়াম কিনতে ৳২০০ লাগবে।"); return; }
             const newBalance = currentUserData.balance - 200;
@@ -213,7 +151,6 @@
             showAlert("এজেন্সি সফলভাবে PREMIUM সাবস্ক্রিপশন কিনেছে!");
         }
 
-        // এজেন্সি: টাস্ক আপলোড
         async function uploadTask() {
             const title = document.getElementById('taskTitle').value.trim();
             const budget = Number(document.getElementById('taskBudget').value);
@@ -250,7 +187,29 @@
             document.getElementById('taskDesc').value = '';
         }
 
-        // ইউজার ভেরিফিকেশন
+        async function agencyDecision(action) {
+            const taskId = document.getElementById('agencyActionTaskId').value.trim();
+            if (!taskId) { showAlert("টাস্ক আইডি দিন!"); return; }
+
+            const taskSnapshot = await get(ref(db, 'tasks/' + taskId));
+            if (!taskSnapshot.exists()) { showAlert("টাস্ক পাওয়া যায়নি!"); return; }
+
+            const task = taskSnapshot.val();
+            if (task.status !== "LOCKED_IN_ESCROW") { showAlert("টাস্কটি লকড অবস্থায় থাকতে হবে!"); return; }
+
+            if (action === 'APPROVE') {
+                await processPayout(task);
+                showAlert("কাজটি আপনি Approve করেছেন। পেমেন্ট রিলিজ হয়েছে!");
+            } else if (action === 'REJECT') {
+                showAlert("আপনি কাজটি সাময়িকভাবে রিজেক্ট করেছেন। ওয়ার্কারকে চ্যাটে জানান।");
+            } else if (action === 'DISPUTED') {
+                await update(ref(db, 'tasks/' + taskId), { status: "DISPUTED" });
+                showAlert("ডিসপ্যুট ফাইল করা হয়েছে! অ্যাডমিন প্যানেল এটি সমাধান করবে।");
+            }
+            document.getElementById('agencyActionTaskId').value = '';
+        }
+
+        // ওয়ার্কার একশনস
         async function verifyUserWithNid() {
             const frontPic = document.getElementById('nidFront').files[0];
             const backPic = document.getElementById('nidBack').files[0];
@@ -269,11 +228,9 @@
                 nidFrontUploaded: frontPic.name,
                 nidBackUploaded: backPic.name
             });
-            
             showAlert("NID কার্ডের ছবিসহ অ্যাকাউন্ট সফলভাবে ভেরিফাইড হয়েছে!");
         }
 
-        // ইউজার: প্রো মেম্বারশিপ
         async function upgradeUser() {
             await update(ref(db, 'users/' + currentUserData.uid), { tier: "PRO" });
             const currentEarnings = globalSystemState.companyEarnings || 0;
@@ -281,7 +238,6 @@
             showAlert("অভিনন্দন! আপনি এখন PRO Worker মেম্বার।");
         }
 
-        // ইউজার: স্কিল টেস্ট
         async function takeSkillTest() {
             let badges = currentUserData.badges || [];
             if (!badges.includes("Verified Expert")) {
@@ -297,7 +253,6 @@
             }
         }
 
-        // ইউজার: কাজ ক্লেইম করা
         async function claimTask() {
             const taskId = document.getElementById('claimTaskId').value.trim();
             if (!taskId) { showAlert("টাস্ক আইডি দিন!"); return; }
@@ -323,7 +278,7 @@
             document.getElementById('claimTaskId').value = '';
         }
 
-        // ইউজার/এজেন্সি: বাজেট লক ও এসক্রো করা
+        // লক ও এসক্রো ফান্ড
         async function lockTask() {
             const taskId = document.getElementById('lockTaskId').value.trim();
             if (!taskId) { showAlert("টাস্ক আইডি দিন!"); return; }
@@ -344,12 +299,11 @@
                 status: "LOCKED_IN_ESCROW",
                 escrowAmount: task.budget
             });
-
             showAlert(`টাস্ক ${taskId} লক করা হয়েছে এবং বাজেট ৳${task.budget} এসক্রোতে সুরক্ষিত আছে!`);
             document.getElementById('lockTaskId').value = '';
         }
 
-        // চ্যাট মেকানিজম
+        // চ্যাট এবং নিরাপত্তা ফিল্টার
         async function sendMessage() {
             const input = document.getElementById('chatMsgInput');
             let text = input.value.trim();
@@ -377,7 +331,7 @@
             input.value = '';
         }
 
-        // রেফারেল কোড সাবমিট
+        // রেফারেল ট্র্যাকিং
         async function submitReferral() {
             const refCode = document.getElementById('referralInput').value.trim();
             if (refCode === "SOHOZ-FAHAD-510") {
@@ -389,30 +343,7 @@
             document.getElementById('referralInput').value = '';
         }
 
-        // এজেন্সি ডিসিশন
-        async function agencyDecision(action) {
-            const taskId = document.getElementById('agencyActionTaskId').value.trim();
-            if (!taskId) { showAlert("টাস্ক আইডি দিন!"); return; }
-
-            const taskSnapshot = await get(ref(db, 'tasks/' + taskId));
-            if (!taskSnapshot.exists()) { showAlert("টাস্ক পাওয়া যায়নি!"); return; }
-
-            const task = taskSnapshot.val();
-            if (task.status !== "LOCKED_IN_ESCROW") { showAlert("টাস্কটি লকড অবস্থায় থাকতে হবে!"); return; }
-
-            if (action === 'APPROVE') {
-                await processPayout(task);
-                showAlert("কাজটি আপনি Approve করেছেন। পেমেন্ট রিলিজ হয়েছে!");
-            } else if (action === 'REJECT') {
-                showAlert("আপনি কাজটি সাময়িকভাবে রিজেক্ট করেছেন। ওয়ার্কারকে চ্যাটে জানান।");
-            } else if (action === 'DISPUTED') {
-                await update(ref(db, 'tasks/' + taskId), { status: "DISPUTED" });
-                showAlert("ডিসপ্যুট ফাইল করা হয়েছে! অ্যাডমিন প্যানেল এটি সমাধান করবে।");
-            }
-            document.getElementById('agencyActionTaskId').value = '';
-        }
-
-        // কোর পেমেন্ট প্রসেসিং
+        // কোর পেমেন্ট হিসাবনিকাশ
         async function processPayout(task) {
             const totalBudget = task.escrowAmount;
             const agencyFee = totalBudget * AGENCY_FEE_PERCENT;
@@ -423,12 +354,10 @@
             const workerSnapshot = await get(ref(db, 'users/' + task.claimedByUid));
             if (workerSnapshot.exists()) {
                 const worker = workerSnapshot.val();
-                
                 if (worker.referredBy) {
                     const referralBonus = totalBudget * REFERRAL_COMMISSION_PERCENT;
                     companyProfit -= referralBonus;
                 }
-
                 await update(ref(db, 'users/' + task.claimedByUid), {
                     balance: (worker.balance || 0) + finalUserPayout,
                     totalRatingsCount: (worker.totalRatingsCount || 0) + 1,
@@ -438,14 +367,10 @@
 
             const currentEarnings = globalSystemState.companyEarnings || 0;
             await set(ref(db, 'companyEarnings'), currentEarnings + companyProfit);
-
-            await update(ref(db, 'tasks/' + task.id), {
-                status: "COMPLETED",
-                escrowAmount: 0
-            });
+            await update(ref(db, 'tasks/' + task.id), { status: "COMPLETED", escrowAmount: 0 });
         }
 
-        // সিক্রেট অ্যাডমিন ভেরিফিকেশন লজিক
+        // অ্যাডমিন প্যানেল কন্ট্রোল
         function submitAdminCredentials() {
             const id = document.getElementById('modalAdminId').value.trim();
             const pass = document.getElementById('modalAdminPass').value.trim();
@@ -465,21 +390,6 @@
             document.getElementById('modalAdminId').value = '';
             document.getElementById('modalAdminPass').value = '';
         }
-
-        // Ctrl + Shift + A কি-বোর্ড শর্টকাট লিসেনার
-        window.addEventListener('keydown', function(e) {
-            if (e.ctrlKey && e.shiftKey && (e.key === 'A' || e.key === 'a')) {
-                e.preventDefault();
-                const adminPanel = document.getElementById('adminPanelCard');
-                
-                if (!adminPanel.classList.contains('hidden')) {
-                    adminPanel.classList.add('hidden');
-                    showAlert("🔒 অ্যাডমিন প্যানেল হাইড করা হয়েছে!");
-                } else {
-                    document.getElementById('adminAuthModal').classList.remove('hidden');
-                }
-            }
-        });
 
         async function adminReleasePayment(isSuccess) {
             const taskId = document.getElementById('adminTaskId').value.trim();
@@ -508,7 +418,6 @@
             document.getElementById('adminTaskId').value = '';
         }
 
-        // অ্যাডমিন প্যানেলে লাইভ ডাটা ডিলিট করার লজিক
         async function adminDeleteUser(uid) {
             if (confirm("আপনি কি নিশ্চিতভাবে এই ইউজারটিকে ডাটাবেজ থেকে ডিলিট করতে চান?")) {
                 await remove(ref(db, 'users/' + uid));
@@ -523,7 +432,6 @@
             }
         }
 
-        // অ্যাডমিন প্যানেলে ইউজার ও টাস্কের অল হিস্ট্রি এবং ডিলিট কন্ট্রোল রেন্ডারিং
         function updateAdminPanel() {
             const userTableBody = document.getElementById('adminUserHistoryBody');
             if(!userTableBody) return;
@@ -568,7 +476,7 @@
             }
         }
 
-        // রিয়েল-টাইম ইন্টারফেস আপডেট
+        // ইন্টারফেস লাইভ আপডেট ও ফিড রেন্ডারিং
         function updateUI() {
             if (!currentUserData) return;
 
@@ -628,4 +536,85 @@
                 }
             }
         }
+
+        // অথেনটিকেশন স্টেট পর্যবেক্ষণ লুপ
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                const snapshot = await get(ref(db, 'users/' + user.uid));
+                if (snapshot.exists()) {
+                    currentUserData = snapshot.val();
+                    currentUserData.uid = user.uid;
+                    showMainPlatform();
+                } else {
+                    setTimeout(async () => {
+                        const retrySnapshot = await get(ref(db, 'users/' + user.uid));
+                        if (retrySnapshot.exists()) {
+                            currentUserData = retrySnapshot.val();
+                            currentUserData.uid = user.uid;
+                            showMainPlatform();
+                        }
+                    }, 1000);
+                }
+            } else {
+                currentUserData = null;
+                showAuthScreen();
+            }
+        });
+
+        // লাইভ ডাটা সিঙ্ক লিসেনার
+        onValue(ref(db), (snapshot) => {
+            if (snapshot.exists()) {
+                globalSystemState = snapshot.val();
+                
+                const jsonDisp = document.getElementById('jsonDisplay');
+                if(jsonDisp) jsonDisp.textContent = JSON.stringify(globalSystemState, null, 4);
+                
+                if (auth.currentUser && globalSystemState.users && globalSystemState.users[auth.currentUser.uid]) {
+                    currentUserData = globalSystemState.users[auth.currentUser.uid];
+                    currentUserData.uid = auth.currentUser.uid;
+                    showMainPlatform(); 
+                }
+                
+                updateUI();
+                updateAdminPanel();
+            }
+        });
+
+        // কি-বোর্ড শর্টকাট (Ctrl + Shift + A) অ্যাডমিন প্যানেল আনলক ট্রাই
+        window.addEventListener('keydown', function(e) {
+            if (e.ctrlKey && e.shiftKey && (e.key === 'A' || e.key === 'a')) {
+                e.preventDefault();
+                const adminPanel = document.getElementById('adminPanelCard');
+                if (adminPanel) {
+                    if (!adminPanel.classList.contains('hidden')) {
+                        adminPanel.classList.add('hidden');
+                        showAlert("🔒 অ্যাডমিন প্যানেল হাইড করা হয়েছে!");
+                    } else {
+                        document.getElementById('adminAuthModal').classList.remove('hidden');
+                    }
+                }
+            }
+        });
+
+        // ফাংশনগুলো উইন্ডো অবজেক্টে এক্সপোর্ট করা (যাতে HTML onclick ট্রিগার পায়)
+        window.handleAuth = handleAuth;
+        window.toggleAuthMode = toggleAuthMode;
+        window.handleLogout = handleLogout;
+        window.agencyDeposit = agencyDeposit;
+        window.upgradeAgency = upgradeAgency;
+        window.uploadTask = uploadTask;
+        window.agencyDecision = agencyDecision;
+        window.verifyUserWithNid = verifyUserWithNid;
+        window.upgradeUser = upgradeUser;
+        window.takeSkillTest = takeSkillTest;
+        window.claimTask = claimTask;
+        window.lockTask = lockTask;
+        window.sendMessage = sendMessage;
+        window.submitReferral = submitReferral;
+        window.submitAdminCredentials = submitAdminCredentials;
+        window.closeAdminModal = closeAdminModal;
+        window.adminReleasePayment = adminReleasePayment;
+        window.adminDeleteUser = adminDeleteUser;
+        window.adminDeleteTask = adminDeleteTask;
+
     </script>
