@@ -52,7 +52,7 @@
         import { getDatabase, ref, set, get, update, onValue } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-database.js";
         import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js";
 
-        // আপনার দেওয়া Firebase কনফিগারেশন
+        // ফায়ারবেস কনফিগারেশন
         const firebaseConfig = {
             apiKey: "AIzaSyD5rY0AR39UOWFa1RtWwb5oYLendr--RGs",
             authDomain: "sohoz-cfe38.firebaseapp.com",
@@ -73,7 +73,7 @@
         const USER_FEE_PERCENT = 0.05;   
         const REFERRAL_COMMISSION_PERCENT = 0.01; 
 
-        // উইন্ডো অবজেক্টে ফাংশন গ্লোবাল করা (যাতে HTML বাটন থেকে কল করা যায়)
+        // উইন্ডো অবজেক্টে ফাংশন গ্লোবাল করা
         window.handleAuth = handleAuth;
         window.toggleAuthMode = toggleAuthMode;
         window.handleLogout = handleLogout;
@@ -142,12 +142,11 @@
                     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
                     const uid = userCredential.user.uid;
                     
-                    // নতুন ইউজার প্রোফাইল ডাটাবেজে তৈরি
                     const defaultUserData = {
                         name: name,
                         email: email,
                         role: role,
-                        balance: role === 'agency' ? 500 : 0, // এজেন্সিকে শুরুতে ৫০০ ডেমো ব্যালেন্স দেওয়া হলো
+                        balance: role === 'agency' ? 500 : 0, 
                         tier: "NORMAL",
                         isVerified: false,
                         claimsToday: 0,
@@ -199,7 +198,6 @@
             document.getElementById('authScreen').classList.add('hidden');
             document.getElementById('mainPlatform').classList.remove('hidden');
             
-            // রোল অনুযায়ী ভিউ কন্ট্রোল
             document.getElementById('displayUserName').innerText = currentUserData.name + ` (${currentUserData.role.toUpperCase()})`;
             
             if (currentUserData.role === 'agency') {
@@ -225,7 +223,6 @@
             const newBalance = currentUserData.balance - 200;
             await update(ref(db, 'users/' + currentUserData.uid), { balance: newBalance, tier: "PREMIUM" });
             
-            // কোম্পানির প্রফিট আপডেট
             const currentEarnings = globalSystemState.companyEarnings || 0;
             await set(ref(db, 'companyEarnings'), currentEarnings + 200);
             showAlert("এজেন্সি সফলভাবে PREMIUM সাবস্ক্রিপশন কিনেছে!");
@@ -278,7 +275,6 @@
 
         // ইউজার: প্রো মেম্বারশিপ
         async function upgradeUser() {
-            // এই ডেমো সিস্টেমে পেমেন্ট গেটওয়ে না থাকায় আমরা ব্যালেন্স চেক ছাড়াই প্রো করার এক্সেস দিচ্ছি
             await update(ref(db, 'users/' + currentUserData.uid), { tier: "PRO" });
             const currentEarnings = globalSystemState.companyEarnings || 0;
             await set(ref(db, 'companyEarnings'), currentEarnings + 100);
@@ -327,7 +323,7 @@
             document.getElementById('claimTaskId').value = '';
         }
 
-        // ইউজার/এজেন্সি: ইন্টারভিউ শেষে বাজেট লক ও এসক্রো করা
+        // ইউজার/এজেন্সি: বাজেট লক ও এসক্রো করা
         async function lockTask() {
             const taskId = document.getElementById('lockTaskId').value.trim();
             if (!taskId) { showAlert("টাস্ক আইডি দিন!"); return; }
@@ -341,9 +337,8 @@
             const agencySnapshot = await get(ref(db, 'users/' + task.agencyUid));
             const agency = agencySnapshot.val();
 
-            if (agency.balance < task.budget) { showAlert("এজেন্সির ব্যালেন্স কম থাকায় ফান্ড এসক্রো করা যাচ্ছে can't be completed!"); return; }
+            if (agency.balance < task.budget) { showAlert("এজেন্সির ব্যালেন্স কম থাকায় ফান্ড এসক্রো করা যাচ্ছে না!"); return; }
 
-            // এজেন্সির অ্যাকাউন্ট থেকে ব্যালেন্স কেটে এসক্রোতে নেওয়া
             await update(ref(db, 'users/' + task.agencyUid), { balance: agency.balance - task.budget });
             await update(ref(db, 'tasks/' + taskId), {
                 status: "LOCKED_IN_ESCROW",
@@ -354,13 +349,12 @@
             document.getElementById('lockTaskId').value = '';
         }
 
-        // চ্যাট মেকানিজম (সুরক্ষা ফিল্টার সহ)
+        // চ্যাট মেকানিজম
         async function sendMessage() {
             const input = document.getElementById('chatMsgInput');
             let text = input.value.trim();
             if (!text) return;
 
-            // সিকিউরিটি ফিল্টার রেগুলার এক্সপ্রেশন
             const scamPattern = /(01[3-9]\d{8}|whatsapp|telegram|bkash|nagad|number|নম্বর)/i;
             let senderName = currentUserData ? currentUserData.name : "Anonymous";
             let isWarning = false;
@@ -395,7 +389,7 @@
             document.getElementById('referralInput').value = '';
         }
 
-        // এজেন্সি ডিসিশন (Approve, Reject, Dispute)
+        // এজেন্সি ডিসিশন
         async function agencyDecision(action) {
             const taskId = document.getElementById('agencyActionTaskId').value.trim();
             if (!taskId) { showAlert("টাস্ক আইডি দিন!"); return; }
@@ -418,7 +412,7 @@
             document.getElementById('agencyActionTaskId').value = '';
         }
 
-        // কোর পেমেন্ট প্রসেসিং ও ফি কাটার লজিক
+        // কোর পেমেন্ট প্রসেসিং
         async function processPayout(task) {
             const totalBudget = task.escrowAmount;
             const agencyFee = totalBudget * AGENCY_FEE_PERCENT;
@@ -430,11 +424,9 @@
             if (workerSnapshot.exists()) {
                 const worker = workerSnapshot.val();
                 
-                // রেফারেল চেক (১% লাইফটাইম কমিশন)
                 if (worker.referredBy) {
                     const referralBonus = totalBudget * REFERRAL_COMMISSION_PERCENT;
                     companyProfit -= referralBonus;
-                    // এখানে ডেমো সিস্টেমে রেফারারকে পেমেন্ট দেওয়ার ট্র্যাকিং রাখা যায়
                 }
 
                 await update(ref(db, 'users/' + task.claimedByUid), {
@@ -444,18 +436,16 @@
                 });
             }
 
-            // কোম্পানি লাভ আপডেট
             const currentEarnings = globalSystemState.companyEarnings || 0;
             await set(ref(db, 'companyEarnings'), currentEarnings + companyProfit);
 
-            // টাস্ক এন্ড মার্ক করা
             await update(ref(db, 'tasks/' + task.id), {
                 status: "COMPLETED",
                 escrowAmount: 0
             });
         }
 
-        // ৪. ওয়েব অ্যাডমিন প্যানেল লগইন ও ফয়সালা
+        // অ্যাডমিন প্যানেল লগইন ও সিক্রেট শর্টকাট লজিক
         function adminLogin() {
             const id = document.getElementById('adminId').value.trim();
             const pass = document.getElementById('adminPass').value.trim();
@@ -467,6 +457,21 @@
                 showAlert("ভুল অ্যাডমিন আইডি বা পাসওয়ার্ড!");
             }
         }
+
+        // Ctrl + Shift + A কি-বোর্ড শর্টকাট লিসেনার
+        window.addEventListener('keydown', function(e) {
+            if (e.ctrlKey && e.shiftKey && (e.key === 'A' || e.key === 'a')) {
+                e.preventDefault(); // ডিফল্ট ব্রাউজার অ্যাকশন বন্ধ করার জন্য
+                const adminPanel = document.getElementById('adminPanelCard');
+                if (adminPanel.classList.contains('hidden')) {
+                    adminPanel.classList.remove('hidden');
+                    showAlert("💎 সিক্রেট শর্টকাট: অ্যাডমিন প্যানেল ওপেন করা হয়েছে!");
+                } else {
+                    adminPanel.classList.add('hidden');
+                    showAlert("🔒 অ্যাডমিন প্যানেল হাইড করা হয়েছে!");
+                }
+            }
+        });
 
         async function adminReleasePayment(isSuccess) {
             const taskId = document.getElementById('adminTaskId').value.trim();
@@ -484,7 +489,6 @@
                 await processPayout(task);
                 showAlert("অ্যাডমিন প্যানেল থেকে সফলভাবে পেমেন্ট রিলিজ করা হয়েছে!");
             } else {
-                // রিফান্ড মেকানিজম - এজেন্সিকে টাকা ফেরত
                 const agencySnapshot = await get(ref(db, 'users/' + task.agencyUid));
                 if (agencySnapshot.exists()) {
                     const agency = agencySnapshot.val();
@@ -500,7 +504,6 @@
         function updateUI() {
             if (!currentUserData) return;
 
-            // ইউজার ডাটা রি-লোডিং ফ্রম গ্লোবাল স্টেট
             const myLatestData = globalSystemState.users ? globalSystemState.users[currentUserData.uid] : null;
             if (myLatestData) {
                 if (currentUserData.role === 'agency') {
@@ -519,7 +522,6 @@
 
             document.getElementById('companyEarnings').innerText = globalSystemState.companyEarnings || 0;
 
-            // লাইভ চ্যাট রেন্ডার
             const chatBox = document.getElementById('chatContainer');
             chatBox.innerHTML = '';
             if (globalSystemState.chats) {
@@ -532,7 +534,6 @@
                 chatBox.scrollTop = chatBox.scrollHeight;
             }
 
-            // লাইভ টাস্ক লিস্ট ফিড রেন্ডার
             const taskFeed = document.getElementById('liveTaskFeed');
             taskFeed.innerHTML = '';
             if (globalSystemState.tasks) {
@@ -555,7 +556,7 @@
 
 <div id="alertBox" class="alert-box"></div>
 
-<!-- অথেনটিকেশন স্ক্রিন (লগইন ও রেজিস্ট্রেশন) -->
+<!-- অথেনটিকেশন স্ক্রিন -->
 <div id="authScreen" class="auth-screen">
     <h2 style="text-align: center; color: var(--dark);">SOHOZ (সহজ) প্ল্যাটফর্ম</h2>
     <div id="registerFields" class="hidden">
@@ -586,7 +587,7 @@
     <div class="header-area">
         <div>
             <h1 style="margin:0; color: var(--dark);">SOHOZ (সহজ) - Remote Job Marketplace</h1>
-            <p style="margin:5px 0 0 0; color:#7f8c8d;">🔒 ফায়ারবেস ব্যাকএন্ডের সাথে রিয়েল-টাইম ড্যাশবোর্ড</p>
+            <p style="margin:5px 0 0 0; color:#7f8c8d;">🔒 ফায়ারবেস ব্যাকএন্ডের সাথে রিয়েল-টাইম ড্যাশবোর্ড (প্যানেল টগল শর্টকাট: Ctrl+Shift+A)</p>
         </div>
     </div>
     
@@ -655,7 +656,7 @@
         </div>
     </div>
 
-    <!-- মার্কেটপ্লেসের লাইভ টাস্ক ফিড (সবাই দেখতে পাবে) -->
+    <!-- মার্কেটপ্লেসের লাইভ টাস্ক ফিড -->
     <div class="card" style="background: #eef2f7;">
         <h2>📋 মার্কেটপ্লেস লাইভ টাস্ক ফিড (Live Job Feed)</h2>
         <div id="liveTaskFeed" style="max-height: 250px; overflow-y: auto;">কোনো কাজ লাইভ নেই...</div>
@@ -664,6 +665,7 @@
     <!-- অ্যাডমিন গেটওয়ে লগইন ফর্ম -->
     <div class="card" style="background:#f9f9f9; border: 1px dashed var(--admin-color);">
         <h3>🔐 অ্যাডমিন প্যানেল লগইন (প্রশাসক এক্সেস)</h3>
+        <p style="font-size:12px; color:gray;">💡 আইডি পাসওয়ার্ড ছাড়াও আপনি সরাসরি <b>Ctrl + Shift + A</b> চেপে প্যানেলটি শো/হাইড করতে পারবেন।</p>
         <div style="display: flex; gap: 10px;">
             <input type="text" id="adminId" placeholder="Admin ID">
             <input type="password" id="adminPass" placeholder="Admin Password">
@@ -671,7 +673,7 @@
         </div>
     </div>
 
-    <!-- ৪. ওয়েব অ্যাডমিন প্যানেল কার্ড (লগইন করার পর দৃশ্যমান হবে) -->
+    <!-- ৪. ওয়েব অ্যাডমিন প্যানেল কার্ড (লগইন বা শর্টকাট প্রেস করলে দৃশ্যমান হবে) -->
     <div id="adminPanelCard" class="card hidden" style="background: #fff9db; border: 1px solid #f59f00; margin-bottom: 20px;">
         <h2>👨‍⚖️ ওয়েব অ্যাডমিন ড্যাশবোর্ড (Secure Admin Panel)</h2>
         <p>📊 <strong>কোম্পানির মোট আয় (ফি + মেম্বারশিপ):</strong> <span id="companyEarnings" style="font-weight:bold; color:var(--admin-color);">0</span> ৳</p>
