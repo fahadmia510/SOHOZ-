@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SOHOZ - Remote Job Marketplace</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f6f9; margin: 0; padding: 20px; color: #333; }
+        .container { max-width: 1100px; margin: auto; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        h1, h2, h3 { color: #2c3e50; margin-top: 0; }
+        .header-area { border-bottom: 2px solid #eee; padding-bottom: 15px; margin-bottom: 25px; display: flex; justify-content: space-between; align-items: center; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+        .card { border: 1px solid #e0e0e0; padding: 20px; border-radius: 8px; background: #fafafa; box-shadow: 0 2px 5px rgba(0,0,0,0.02); }
+        input, textarea, select { width: 100%; padding: 10px; margin: 8px 0; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; }
+        button { background: #27ae60; color: white; border: none; padding: 12px 20px; border-radius: 5px; cursor: pointer; font-weight: bold; width: 100%; transition: 0.3s; }
+        button:hover { background: #219653; }
+        .btn-lock { background: #2f80ed; }
+        .btn-lock:hover { background: #1b66ca; }
+        .btn-admin { background: #9b51e0; }
+        .btn-admin:hover { background: #803ec2; }
+        .status-badge { display: inline-block; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; text-transform: uppercase; }
+        .status-open { background: #e3fcef; color: #148f52; }
+        .status-claimed { background: #fff9db; color: #b27b00; }
+        .status-locked { background: #e8f4fd; color: #1d70b8; }
+        .status-completed { background: #f3f4f6; color: #4b5563; }
+        pre { background: #1e1e1e; color: #39ff14; padding: 15px; border-radius: 6px; overflow-x: auto; font-family: 'Courier New', Courier, monospace; font-size: 14px; }
+        .alert-box { padding: 10px; background: #e3f2fd; color: #0d47a1; border-left: 4px solid #1976d2; margin-bottom: 15px; border-radius: 4px; display: none; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header-area">
+        <div>
+            <h1>SOHOZ (সহজ) - Remote Job Company</h1>
+            <p style="margin:0; color:#7f8c8d;">সম্পূর্ণ ক্লায়েন্ট-সাইড সিমুলেশন প্রোটোটাইপ</p>
+        </div>
+        <button onclick="resetDatabase()" style="width:auto; background:#e74c3c;">Reset Data</button>
+    </div>
+
+    <div id="alertBox" class="alert-box"></div>
+    
+    <div class="grid">
+        <!-- এজেন্সি প্যানেল -->
+        <div class="card">
+            <h2>১. এজেন্সি প্যানেল (Alpha Marketing)</h2>
+            <p><strong>ডিপোজিট ব্যালেন্স:</strong> $<span id="agencyBalance">500</span></p>
+            <hr>
+            <h4>নতুন টাস্ক আপলোড করুন:</h4>
+            <input type="text" id="taskTitle" placeholder="কাজের শিরোনাম (e.g. Logo Design for Crypto)">
+            <input type="number" id="taskBudget" placeholder="বাজেট ($)">
+            <textarea id="taskDesc" placeholder="কাজের বিবরণ ও শর্তাবলী..."></textarea>
+            <button onclick="uploadTask()">টাস্ক ডিপোজিট ও আপলোড করুন</button>
+        </div>
+
+        <!-- ইউজার প্যানেল -->
+        <div class="card">
+            <h2>২. ইউজার প্যানেল (Fahad Mia)</h2>
+            <p><strong>স্ট্যাটাস:</strong> <span style="color:green; font-weight:bold;">Verified Expert ✓</span></p>
+            <p><strong>ইউজার ইনকাম ব্যালেন্স:</strong> $<span id="userBalance">0</span></p>
+            <hr>
+            <h4>ধাপ ২: টাস্ক ক্লেইম করুন</h4>
+            <input type="text" id="claimTaskId" placeholder="টাস্ক আইডি দিন (e.g. task_1)">
+            <button onclick="claimTask()">কাজ ক্লেইম করুন</button>
+            
+            <h4 style="margin-top:20px;">ধাপ ৩: ইন্টারভিউ শেষে কাজ ও বাজেট লক করুন</h4>
+            <input type="text" id="lockTaskId" placeholder="টাস্ক আইডি দিন (e.g. task_1)">
+            <button onclick="lockTask()" class="btn-lock">ইন্টারভিউ কনফার্ম ও বাজেট এসক্রোতে লক করুন</button>
+        </div>
+    </div>
+
+    <!-- অ্যাডমিন প্যানেল -->
+    <div class="card" style="background: #fff9db; border: 1px solid #f59f00;">
+        <h2>৩. ওয়েব অ্যাডমিন প্যানেল (Web Admin Escrow Control)</h2>
+        <p>ইউজার নির্দিষ্ট টাইমে কাজ জমা দেওয়ার পর এবং উভয় পক্ষ (Agency & User) কনফার্ম করলে অ্যাডমিন প্যানেল থেকে পেমেন্ট রিলিজ হবে। এখানে কোম্পানি স্বয়ংক্রিয়ভাবে উভয় পক্ষ থেকে ফি কাটবে।</p>
+        <div style="display:flex; gap:15px; align-items:center;">
+            <input type="text" id="adminTaskId" placeholder="টাস্ক আইডি দিন (e.g. task_1)" style="flex:1;">
+            <label><input type="checkbox" id="agencyConf" checked> এজেন্সি কনফার্মেশন</label>
+            <label><input type="checkbox" id="userConf" checked> ইউজার কনফার্মেশন</label>
+        </div>
+        <button onclick="releasePayment()" class="btn-admin" style="margin-top:10px;">টাস্ক এন্ড করুন ও পেমেন্ট রিলিজ করুন</button>
+    </div>
+
+    <br>
+    <!-- লাইভ ডাটাবেজ স্টেট -->
+    <h2>৪. লাইভ সিস্টেম ডাটাবেজ (Live Database State)</h2>
+    <p>সিস্টেমের ব্যাকএন্ডে কীভাবে ডাটা পরিবর্তন হচ্ছে তা লাইভ দেখুন:</p>
+    <pre id="jsonDisplay">Loading Live State...</pre>
+</div>
+
+<script>
+    // ডাবল-সাইডেড রেভিনিউ মডেল ফি (৫% করে)
+    const AGENCY_FEE_PERCENT = 0.05;
+    const USER_FEE_PERCENT = 0.05;
+
+    // লোকাল ডাটাবেজ ইনিশিয়ালাইজেশন
+    function initDB() {
+        if (!localStorage.getItem('sohoz_db')) {
+            const defaultDB = {
+                agency: { name: "Alpha Marketing", balance: 500 },
+                user: { name: "Fahad Mia", balance: 0, isVerified: true },
+                companyFees: 0,
+                tasks: []
+            };
+            localStorage.setItem('sohoz_db', JSON.stringify(defaultDB));
+        }
+    }
+
+    function getDB() {
+        return JSON.parse(localStorage.getItem('sohoz_db'));
+    }
+
+    function saveDB(db) {
+        localStorage.setItem('sohoz_db', JSON.stringify(db));
+        updateUI();
+    }
+
+    function showAlert(msg) {
+        const box = document.getElementById('alertBox');
+        box.innerText = msg;
+        box.style.display = 'block';
+        setTimeout(() => { box.style.display = 'none'; }, 5000);
+    }
+
+    // ১. টাস্ক আপলোড (এজেন্সি)
+    function uploadTask() {
+        let db = getDB();
+        const title = document.getElementById('taskTitle').value;
+        const budget = Number(document.getElementById('taskBudget').value);
+        const desc = document.getElementById('taskDesc').value;
+
+        if (!title || !budget) { showAlert("দয়া করে শিরোনাম এবং বাজেট সঠিকভাবে দিন!"); return; }
+        if (db.agency.balance < budget) { showAlert("দুঃখিত! এই কাজ পোস্ট করার মতো পর্যাপ্ত ব্যালেন্স এজেন্সির অ্যাকাউন্টে নেই।"); return; }
+
+        const newTask = {
+            id: "task_" + (db.tasks.length + 1),
+            title: title,
+            description: desc,
+            budget: budget,
+            status: "OPEN", // OPEN, CLAIMED, LOCKED_IN_ESCROW, COMPLETED
+            claimedBy: null,
+            escrowAmount: 0
+        };
+
+        db.tasks.push(newTask);
+        saveDB(db);
+        showAlert(`টাস্ক "${title}" সফলভাবে আপলোড হয়েছে! আইডি: ${newTask.id}`);
+        
+        // ক্লিয়ার ইনপুট
+        document.getElementById('taskTitle').value = '';
+        document.getElementById('taskBudget').value = '';
+        document.getElementById('taskDesc').value = '';
+    }
+
+    // ২. টাস্ক ক্লেইম (ইউজার)
+    function claimTask() {
+        let db = getDB();
+        const taskId = document.getElementById('claimTaskId').value.trim();
+        let task = db.tasks.find(t => t.id === taskId);
+
+        if (!task) { showAlert("এই আইডি-র কোনো টাস্ক পাওয়া যায়নি!"); return; }
+        if (task.status !== "OPEN") { showAlert("এই টাস্কটি অলরেডি ক্লেইমড বা লক হয়ে গেছে।"); return; }
+
+        task.status = "CLAIMED";
+        task.claimedBy = db.user.name;
+        
+        saveDB(db);
+        showAlert(`অভিনন্দন! আপনি সফলভাবে ${taskId} ক্লেইম করেছেন। এখন এজেন্সির ইন্টারভিউয়ের জন্য অপেক্ষা করুন।`);
+        document.getElementById('claimTaskId').value = '';
+    }
+
+    // ৩. টাস্ক লক ও এসক্রো ট্র্যাকিং
+    function lockTask() {
+        let db = getDB();
+        const taskId = document.getElementById('lockTaskId').value.trim();
+        let task = db.tasks.find(t => t.id === taskId);
+
+        if (!task) { showAlert("টাস্ক পাওয়া যায়নি!"); return; }
+        if (task.status !== "CLAIMED") { showAlert("টাস্কটি প্রথমে কোনো ইউজার দ্বারা ক্লেইম হতে হবে।"); return; }
+        if (db.agency.balance < task.budget) { showAlert("এজেন্সির ব্যালেন্স কম।"); return; }
+
+        // এজেন্সির মেইন ব্যালেন্স থেকে কেটে এসক্রোতে হোল্ড করা
+        db.agency.balance -= task.budget;
+        task.escrowAmount = task.budget;
+        task.status = "LOCKED_IN_ESCROW";
+
+        saveDB(db);
+        showAlert(`টাস্ক ${taskId} সফলভাবে লক করা হয়েছে! বাজেট $${task.budget} এখন কোম্পানির সুরক্ষিত এসক্রো (Waiting) ফান্ডের অধীনে রয়েছে।`);
+        document.getElementById('lockTaskId').value = '';
+    }
+
+    // ৪. পেমেন্ট রিলিজ এবং কোম্পানি ফি কাটা (অ্যাডমিন)
+    function releasePayment() {
+        let db = getDB();
+        const taskId = document.getElementById('adminTaskId').value.trim();
+        const agencyConf = document.getElementById('agencyConf').checked;
+        const userConf = document.getElementById('userConf').checked;
+        let task = db.tasks.find(t => t.id === taskId);
+
+        if (!task) { showAlert("সঠিক টাস্ক আইডি দিন!"); return; }
+        if (task.status !== "LOCKED_IN_ESCROW") { showAlert("এই টাস্কটি এসক্রোতে লক করা অবস্থায় নেই!"); return; }
+        if (!agencyConf || !userConf) { showAlert("অ্যাডমিন পেমেন্ট রিলিজ করার জন্য উভয় পক্ষের কনফার্মেশন টিক দিতে হবে!"); return; }
+
+        const totalBudget = task.escrowAmount;
+        
+        // ফি ক্যালকুলেশন (৫% করে)
+        const agencyFee = totalBudget * AGENCY_FEE_PERCENT;
+        const userFee = totalBudget * USER_FEE_PERCENT;
+        const companyProfit = agencyFee + userFee;
+        const finalUserPayout = totalBudget - userFee;
+
+        // ব্যালেন্স ট্রান্সফার
+        db.user.balance += finalUserPayout;
+        db.companyFees += companyProfit;
+        
+        // টাস্ক সমাপ্ত ঘোষণা
+        task.status = "COMPLETED";
+        task.escrowAmount = 0;
+
+        saveDB(db);
+        showAlert(`অ্যাডমিন প্যানেল থেকে পেমেন্ট রিলিজ সফল! কোম্পানি প্রফিট করেছে: $${companyProfit}। ইউজার পেয়েছে: $${finalUserPayout}`);
+        document.getElementById('adminTaskId').value = '';
+    }
+
+    function resetDatabase() {
+        localStorage.removeItem('sohoz_db');
+        initDB();
+        updateUI();
+        showAlert("ডাটাবেজ রিসেট করা হয়েছে!");
+    }
+
+    // ইন্টারফেস আপডেট ফাংশন
+    function updateUI() {
+        initDB();
+        const db = getDB();
+        
+        document.getElementById('agencyBalance').innerText = db.agency.balance;
+        document.getElementById('userBalance').innerText = db.user.balance;
+        
+        // মেমোরি স্টেট প্রদর্শন
+        document.getElementById('jsonDisplay').textContent = JSON.stringify(db, null, 4);
+    }
+
+    window.onload = updateUI;
+</script>
+
+</body>
+</html>
