@@ -1,103 +1,9 @@
-<!DOCTYPE html>
-<html lang="bn">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SOHOZ  - Remote Job Platform (BD)</title>
-    <style>
-        :root {
-            --primary: #2ecc71;
-            --primary-dark: #27ae60;
-            --agency-color: #3498db;
-            --agency-dark: #2980b9;
-            --admin-color: #9b51e0;
-            --danger: #e74c3c;
-            --dark: #2c3e50;
-            --light: #f8f9fa;
-            --card-shadow: 0 4px 20px rgba(0,0,0,0.08);
-        }
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: var(--light); margin: 0; padding: 0; color: #333; }
-        
-        /* Navbar Styling */
-        .navbar { background: var(--dark); color: white; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        .navbar h1 { margin: 0; font-size: 22px; font-weight: bold; letter-spacing: 1px; }
-        .nav-right { display: flex; align-items: center; gap: 15px; }
-        .user-info { background: rgba(255,255,255,0.1); padding: 8px 15px; border-radius: 20px; font-size: 14px; font-weight: 500; }
-        .logout-btn { background: var(--danger); color: white; border: none; padding: 8px 16px; border-radius: 20px; cursor: pointer; font-weight: bold; transition: 0.3s; }
-        .logout-btn:hover { background: #c0392b; }
-
-        .container { max-width: 1300px; margin: 30px auto; padding: 0 20px; box-sizing: border-box; }
-        
-        /* Dashboard Layouts */
-        .dashboard-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 30px; margin-bottom: 30px; }
-        @media (max-width: 992px) { .dashboard-grid { grid-template-columns: 1fr; } }
-
-        .card { background: white; border-radius: 12px; padding: 25px; box-shadow: var(--card-shadow); margin-bottom: 25px; border: 1px solid #eaedf1; }
-        .card h2 { margin-top: 0; color: var(--dark); font-size: 20px; border-bottom: 2px solid #f1f3f5; padding-bottom: 12px; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
-        
-        /* Sub-sections inside Dashboard */
-        .sub-section { background: #fdfdfd; border: 1px solid #e9ecef; border-radius: 8px; padding: 20px; margin-bottom: 15px; }
-        .sub-section h3 { margin-top: 0; font-size: 16px; color: var(--dark); border-left: 4px solid var(--agency-color); padding-left: 10px; }
-        .worker-section h3 { border-left-color: var(--primary); }
-
-        /* Form Controls */
-        label { font-weight: 600; font-size: 13px; color: #555; display: block; margin-top: 10px; }
-        input, textarea, select { width: 100%; padding: 12px; margin: 8px 0 15px 0; border: 1px solid #dde1e5; border-radius: 6px; box-sizing: border-box; font-size: 14px; transition: 0.3s; background: #fff; }
-        input:focus, textarea:focus, select:focus { border-color: #a5a5a5; outline: none; box-shadow: 0 0 8px rgba(0,0,0,0.05); }
-        
-        /* Buttons */
-        button { background: var(--primary); color: white; border: none; padding: 12px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%; transition: 0.3s; font-size: 14px; }
-        button:hover { filter: brightness(0.95); transform: translateY(-1px); }
-        .btn-agency { background: var(--agency-color); }
-        .btn-agency:hover { background: var(--agency-dark); }
-        .btn-admin { background: var(--admin-color); }
-        .btn-secondary { background: #7f8c8d; }
-        .btn-danger-small { background: var(--danger); padding: 5px 10px; font-size: 11px; width: auto; display: inline-block; border-radius: 4px; }
-
-        /* Badges & Tags */
-        .badge { display: inline-block; padding: 4px 10px; border-radius: 5px; font-size: 12px; font-weight: bold; text-transform: uppercase; }
-        .badge-verified { background: #e3fcef; color: #148f52; }
-        .badge-premium { background: #fff3cd; color: #856404; }
-        .badge-normal { background: #e9ecef; color: #495057; }
-        
-        .status-tag { display: inline-block; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; }
-        .status-OPEN { background: #e3fcef; color: #148f52; }
-        .status-CLAIMED { background: #fff9db; color: #b27b00; }
-        .status-LOCKED_IN_ESCROW { background: #e8f4fd; color: #1d70b8; }
-        .status-DISPUTED { background: #fce8e6; color: #c53929; }
-        .status-COMPLETED { background: #f3f4f6; color: #4b5563; }
-
-        /* Component Elements */
-        pre { background: #1e1e1e; color: #39ff14; padding: 15px; border-radius: 6px; overflow-x: auto; font-family: 'Courier New', monospace; font-size: 13px; max-height: 300px; }
-        .alert-box { padding: 15px 20px; background: #dbf2fe; color: #0369a1; border-left: 5px solid #0284c7; margin-bottom: 20px; border-radius: 6px; display: none; font-weight: bold; position: fixed; top: 20px; right: 20px; z-index: 2000; box-shadow: 0 10px 30px rgba(0,0,0,0.15); }
-        .chat-box { background: #f8f9fa; border: 1px solid #e9ecef; height: 180px; overflow-y: auto; padding: 15px; border-radius: 6px; margin-bottom: 10px; }
-        .chat-msg { margin-bottom: 8px; padding: 8px 12px; border-radius: 6px; background: white; border-left: 3px solid #ccc; font-size: 13px; }
-        .chat-msg.warning { background: #fff5f5; border-left-color: var(--danger); color: #c53929; font-weight: bold; }
-        
-        /* Auth Screen */
-        .auth-screen { max-width: 450px; margin: 80px auto; background: white; padding: 35px; border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.06); border: 1px solid #e1e8ed; }
-        .auth-screen h2 { text-align: center; color: var(--dark); margin-bottom: 25px; font-size: 24px; }
-        
-        .hidden { display: none !important; }
-        .task-list-item { background: #fff; border: 1px solid #e9ecef; padding: 15px; margin-bottom: 12px; border-radius: 8px; transition: 0.2s; }
-        .task-list-item:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.03); }
-
-        /* Admin History Table Styling */
-        .admin-table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 13px; background: white; }
-        .admin-table th, .admin-table td { border: 1px solid #dde1e5; padding: 10px; text-align: left; }
-        .admin-table th { background: #f1f3f5; color: var(--dark); }
-
-        /* Secret Admin Prompt Modal */
-        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 3000; }
-        .modal-content { background: white; padding: 30px; border-radius: 10px; width: 90%; max-width: 400px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
-    </style>
-
-    <script type="module">
+<script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
         import { getDatabase, ref, set, get, update, onValue, remove } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-database.js";
         import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js";
 
-        // ফায়ারবেস কনফিগারেশন (No Change)
+        // ফায়ারবেস কনফিগারেশন
         const firebaseConfig = {
             apiKey: "AIzaSyD5rY0AR39UOWFa1RtWwb5oYLendr--RGs",
             authDomain: "sohoz-cfe38.firebaseapp.com",
@@ -158,6 +64,16 @@
                     currentUserData = snapshot.val();
                     currentUserData.uid = user.uid;
                     showMainPlatform();
+                } else {
+                    // যদি ডাটাবেজে ডাটা আসতে সামান্য দেরি হয়, তবে আবার ট্রাই করবে
+                    setTimeout(async () => {
+                        const retrySnapshot = await get(ref(db, 'users/' + user.uid));
+                        if (retrySnapshot.exists()) {
+                            currentUserData = retrySnapshot.val();
+                            currentUserData.uid = user.uid;
+                            showMainPlatform();
+                        }
+                    }, 1000);
                 }
             } else {
                 currentUserData = null;
@@ -170,6 +86,14 @@
             if (snapshot.exists()) {
                 globalSystemState = snapshot.val();
                 document.getElementById('jsonDisplay').textContent = JSON.stringify(globalSystemState, null, 4);
+                
+                // ইউজার লগইন থাকা অবস্থায় রিয়েল-টাইম প্রোফাইল ডাটা সিঙ্ক ধরে রাখা
+                if (auth.currentUser && globalSystemState.users && globalSystemState.users[auth.currentUser.uid]) {
+                    currentUserData = globalSystemState.users[auth.currentUser.uid];
+                    currentUserData.uid = auth.currentUser.uid;
+                    showMainPlatform(); 
+                }
+                
                 updateUI();
                 updateAdminPanel();
             }
@@ -206,9 +130,18 @@
                         referredBy: ""
                     };
                     await set(ref(db, 'users/' + uid), defaultUserData);
+                    currentUserData = defaultUserData;
+                    currentUserData.uid = uid;
+                    showMainPlatform();
                     showAlert("রেজিস্ট্রেশন সফল হয়েছে!");
                 } else {
-                    await signInWithEmailAndPassword(auth, email, password);
+                    const userCredential = await signInWithEmailAndPassword(auth, email, password);
+                    const snapshot = await get(ref(db, 'users/' + userCredential.user.uid));
+                    if (snapshot.exists()) {
+                        currentUserData = snapshot.val();
+                        currentUserData.uid = userCredential.user.uid;
+                        showMainPlatform();
+                    }
                     showAlert("লগইন সফল হয়েছে!");
                 }
             } catch (error) {
@@ -245,6 +178,7 @@
         }
 
         function showMainPlatform() {
+            if (!currentUserData) return;
             document.getElementById('authScreen').classList.add('hidden');
             document.getElementById('mainPlatform').classList.remove('hidden');
             document.getElementById('mainNavbar').classList.remove('hidden');
@@ -316,7 +250,7 @@
             document.getElementById('taskDesc').value = '';
         }
 
-        // ইউজার ভেরিফিকেশন (NID এপিঠ-ওপিঠ ছবি আপলোড লজিক)
+        // ইউজার ভেরিফিকেশন
         async function verifyUserWithNid() {
             const frontPic = document.getElementById('nidFront').files[0];
             const backPic = document.getElementById('nidBack').files[0];
@@ -326,7 +260,6 @@
                 return;
             }
 
-            // যেহেতু স্টোরেজ ছাড়া মডিউল রান হচ্ছে, আমরা ছবি আপলোডের প্রসেস ডাটাবেজে স্ট্যাটাস ট্র্যাকিং হিসেবে সেট করছি
             let badges = currentUserData.badges || [];
             if (!badges.includes("Verified")) badges.push("Verified");
             
@@ -430,7 +363,7 @@
                 text = "⚠️ মেসেজ ব্লক করা হয়েছে! প্ল্যাটফর্মের বাইরে কন্টাক্ট শেয়ার করা সম্পূর্ণ নিষিদ্ধ।";
                 senderName = "🛡️ সিস্টেম সিকিউরিটি";
                 isWarning = true;
-                showAlert("নিরাপত্তা জন জনিত কারণে আপনার মেসেজটি ফিল্টার করা হয়েছে!");
+                showAlert("নিরাপত্তা জনিত কারণে আপনার মেসেজটি ফিল্টার করা হয়েছে!");
             }
 
             const chatRef = ref(db, 'chats');
@@ -456,7 +389,7 @@
             document.getElementById('referralInput').value = '';
         }
 
-        //  एজেন্সি ডিসিশন
+        // এজেন্সি ডিসিশন
         async function agencyDecision(action) {
             const taskId = document.getElementById('agencyActionTaskId').value.trim();
             if (!taskId) { showAlert("টাস্ক আইডি দিন!"); return; }
@@ -560,7 +493,7 @@
             const task = taskSnapshot.val();
 
             if (isSuccess) {
-                if (!agencyConf || !userConf) { showAlert("ম্যানুয়াল রিলিজে দুই পক্ষের কনফার্মেশন টিক দিন!"); return; }
+                if (!agencyConf || !userConf) { showAlert("ম্যানুয়াল ریلیজে দুই পক্ষের কনফার্মেশন টিক দিন!"); return; }
                 await processPayout(task);
                 showAlert("অ্যাডমিন প্যানেল থেকে সফলভাবে পেমেন্ট রিলিজ করা হয়েছে!");
             } else {
@@ -593,6 +526,7 @@
         // অ্যাডমিন প্যানেলে ইউজার ও টাস্কের অল হিস্ট্রি এবং ডিলিট কন্ট্রোল রেন্ডারিং
         function updateAdminPanel() {
             const userTableBody = document.getElementById('adminUserHistoryBody');
+            if(!userTableBody) return;
             userTableBody.innerHTML = '';
             if (globalSystemState.users) {
                 Object.keys(globalSystemState.users).forEach(uid => {
@@ -613,6 +547,7 @@
             }
 
             const taskTableBody = document.getElementById('adminTaskHistoryBody');
+            if(!taskTableBody) return;
             taskTableBody.innerHTML = '';
             if (globalSystemState.tasks) {
                 Object.keys(globalSystemState.tasks).forEach(tid => {
@@ -653,269 +588,44 @@
                 }
             }
 
-            document.getElementById('companyEarnings').innerText = globalSystemState.companyEarnings || 0;
+            if(document.getElementById('companyEarnings')) {
+                document.getElementById('companyEarnings').innerText = globalSystemState.companyEarnings || 0;
+            }
 
             const chatBox = document.getElementById('chatContainer');
-            chatBox.innerHTML = '';
-            if (globalSystemState.chats) {
-                globalSystemState.chats.forEach(c => {
-                    let div = document.createElement('div');
-                    div.className = "chat-msg" + (c.isWarning ? " warning" : "");
-                    div.innerHTML = `<strong>${c.sender}:</strong> ${c.text}`;
-                    chatBox.appendChild(div);
-                });
-                chatBox.scrollTop = chatBox.scrollHeight;
+            if(chatBox) {
+                chatBox.innerHTML = '';
+                if (globalSystemState.chats) {
+                    globalSystemState.chats.forEach(c => {
+                        let div = document.createElement('div');
+                        div.className = "chat-msg" + (c.isWarning ? " warning" : "");
+                        div.innerHTML = `<strong>${c.sender}:</strong> ${c.text}`;
+                        chatBox.appendChild(div);
+                    });
+                    chatBox.scrollTop = chatBox.scrollHeight;
+                }
             }
 
             const taskFeed = document.getElementById('liveTaskFeed');
-            taskFeed.innerHTML = '';
-            if (globalSystemState.tasks) {
-                Object.keys(globalSystemState.tasks).forEach(key => {
-                    const t = globalSystemState.tasks[key];
-                    let item = document.createElement('div');
-                    item.className = "task-list-item";
-                    item.innerHTML = `
-                        <strong>ID:</strong> <code style="background:#f1f3f5; padding:2px 6px; border-radius:4px;">${t.id}</code> | <strong>Title:</strong> ${t.title} <br>
-                        <div style="margin-top: 5px;">
-                            <strong>Budget:</strong> ৳${t.budget} | <strong>Status:</strong> <span class="status-tag status-${t.status}">${t.status}</span>
-                        </div>
-                        <small style="color: #7f8c8d; display:block; margin-top:5px;">Agency: ${t.agencyName} | Worker: ${t.claimedByName || 'None'}</small>
-                    `;
-                    taskFeed.appendChild(item);
-                });
+            if(taskFeed) {
+                taskFeed.innerHTML = '';
+                if (globalSystemState.tasks && Object.keys(globalSystemState.tasks).length > 0) {
+                    Object.keys(globalSystemState.tasks).forEach(key => {
+                        const t = globalSystemState.tasks[key];
+                        let item = document.createElement('div');
+                        item.className = "task-list-item";
+                        item.innerHTML = `
+                            <strong>ID:</strong> <code style="background:#f1f3f5; padding:2px 6px; border-radius:4px;">${t.id}</code> | <strong>Title:</strong> ${t.title} <br>
+                            <div style="margin-top: 5px;">
+                                <strong>Budget:</strong> ৳${t.budget} | <strong>Status:</strong> <span class="status-tag status-${t.status}">${t.status}</span>
+                            </div>
+                            <small style="color: #7f8c8d; display:block; margin-top:5px;">Agency: ${t.agencyName} | Worker: ${t.claimedByName || 'None'}</small>
+                        `;
+                        taskFeed.appendChild(item);
+                    });
+                } else {
+                    taskFeed.innerHTML = "কোনো কাজ লাইভ নেই...";
+                }
             }
         }
     </script>
-</head>
-<body>
-
-<div id="alertBox" class="alert-box"></div>
-
-<nav id="mainNavbar" class="navbar hidden">
-    <h1>SOHOZ (সহজ)</h1>
-    <div class="nav-right">
-        <div class="user-info" id="displayUserName">ইউজার</div>
-        <button onclick="handleLogout()" class="logout-btn">লগআউট</button>
-    </div>
-</nav>
-
-<div id="authScreen" class="auth-screen">
-    <h2>SOHOZ প্ল্যাটফর্ম</h2>
-    <div id="registerFields" class="hidden">
-        <label>আপনার সম্পূর্ণ নাম:</label>
-        <input type="text" id="authName" placeholder="যেমন: MD Fahad Mia">
-        <label>অ্যাকাউন্টের ধরন সিলেক্ট করুন:</label>
-        <select id="authRole">
-            <option value="worker">Worker / Public (কাজ করার জন্য)</option>
-            <option value="agency">Agency / Company (কাজ দেওয়ার জন্য)</option>
-        </select>
-    </div>
-    <label>ইমেইল এড্রেস:</label>
-    <input type="email" id="authEmail" placeholder="example@mail.com">
-    <label>পাসওয়ার্ড:</label>
-    <input type="password" id="authPassword" placeholder="******">
-    
-    <button id="authBtn" onclick="handleAuth()">লগইন করুন</button>
-    <p id="toggleLink" onclick="toggleAuthMode()" style="text-align:center; color: var(--agency-color); cursor:pointer; font-size:13px; margin-top:15px;">নতুন অ্যাকাউন্ট তৈরি করতে চান? রেজিস্টার করুন</p>
-</div>
-
-<div id="mainPlatform" class="container hidden">
-    
-    <div class="dashboard-grid">
-        
-        <div>
-            <div id="agencySection" class="card hidden" style="border-top: 4px solid var(--agency-color);">
-                <h2>💼 Agency Workspace</h2>
-                
-                <div class="sub-section">
-                    <h3>💳 My Account & Wallet</h3>
-                    <p style="margin: 10px 0;">💰 <strong>কারেন্ট ব্যালেন্স:</strong> <span id="agencyBalance" style="font-size:18px; color:var(--agency-color); font-weight:bold;">0</span> ৳</p>
-                    <p style="margin: 10px 0;">👑 <strong>অ্যাকাউন্ট মেম্বারশিপ:</strong> <span id="agencyTier" class="badge">NORMAL</span></p>
-                </div>
-
-                <div class="sub-section">
-                    <h3>➕ Financial Management</h3>
-                    <p style="font-size: 13px; color: #666; margin-bottom: 12px;">টাস্ক বাজেট লোড বা অ্যাকাউন্ট আপগ্রেড করতে ফান্ড ব্যবহার করুন।</p>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                        <button onclick="agencyDeposit()" style="background:#e67e22;">৳ ৫০০ ফান্ড যোগ করুন</button>
-                        <button onclick="upgradeAgency()" class="btn-agency">Premium মেম্বার হোন (৳২০০)</button>
-                    </div>
-                </div>
-
-                <div class="sub-section">
-                    <h3>🚀 Publish a New Task</h3>
-                    <input type="text" id="taskTitle" placeholder="কাজের শিরোনাম (যেমন: লোগো ডিজাইন)">
-                    <input type="number" id="taskBudget" placeholder="কাজের বাজেট বা রেট (৳)">
-                    <textarea id="taskDesc" rows="3" placeholder="কাজের বিস্তারিত বিবরণ এবং শর্তাবলী এখানে লিখুন..."></textarea>
-                    <button onclick="uploadTask()" class="btn-agency">মার্কেটপ্লেসে জব পোস্ট করুন</button>
-                </div>
-
-                <div class="sub-section">
-                    <h3>🛡️ Escrow & Project Management</h3>
-                    <p style="font-size: 13px; color: #666;">কাজ শেষ হলে পেমেন্ট রিলিজ করুন অথবা কোনো সমস্যা হলে ডিসপ্যুট ওপেন করুন।</p>
-                    <input type="text" id="agencyActionTaskId" placeholder="টাস্ক আইডি দিন (e.g. task_171000...)">
-                    <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:8px; margin-top:5px;">
-                        <button onclick="agencyDecision('APPROVE')" style="background:#27ae60; padding: 10px 5px;">Approve & Pay</button>
-                        <button onclick="agencyDecision('REJECT')" style="background:#e67e22; padding: 10px 5px;">Reject Work</button>
-                        <button onclick="agencyDecision('DISPUTED')" style="background:var(--danger); padding: 10px 5px;">Dispute</button>
-                    </div>
-                </div>
-            </div>
-
-            <div id="workerSection" class="card hidden" style="border-top: 4px solid var(--primary); font-weight: normal;">
-                <h2>🎯 Freelancer Workspace</h2>
-                
-                <div class="sub-section worker-section">
-                    <h3>📊 Profile & Earnings Overview</h3>
-                    <p style="margin: 10px 0;">💵 <strong>মোট ইনকাম ব্যালেন্স:</strong> <span id="userBalance" style="font-size:18px; color:var(--primary-dark); font-weight:bold;">0</span> ৳</p>
-                    <p style="margin: 10px 0;">⭐ <strong>গড় রেটিং:</strong> <span id="userRating" style="color:#f39c12; font-weight:bold;">0.0 ★</span></p>
-                    <div style="margin-top: 10px;">
-                        <span style="font-weight:600; font-size:13px;">ব্যাজ ও মেম্বারশিপ:</span>
-                        <span id="userVerifyBadge" class="badge">আনভেরিফাইড</span>
-                        <span id="userTier" class="badge">NORMAL</span>
-                    </div>
-                </div>
-
-                <div class="sub-section worker-section">
-                    <h3>🎯 Job Application & Claiming</h3>
-                    <p style="font-size: 13px; color: #666;">নিচের লাইভ ফিড থেকে পছন্দসই কাজের আইডিটি কপি করে এখানে সাবমিট করুন।</p>
-                    <input type="text" id="claimTaskId" placeholder="এখানে টাস্ক আইডি পেস্ট করুন...">
-                    <button onclick="claimTask()">কাজের অফারটি ক্লেইম করুন</button>
-                </div>
-
-                <div class="sub-section worker-section">
-                    <h3>🤝 Contract & Escrow Lock</h3>
-                    <p style="font-size: 13px; color: #666;">চ্যাট বা ইন্টারভিউ চূড়ান্ত হওয়ার পর এজেন্সির বাজেটটি এসক্রোতে লক বা সুরক্ষিত করুন।</p>
-                    <input type="text" id="lockTaskId" placeholder="টাস্ক আইডি দিন...">
-                    <button onclick="lockTask()" style="background:var(--agency-color);">বাজেট এসক্রো লক করুন</button>
-                </div>
-
-                <div class="sub-section worker-section">
-                    <h3>⚡ Verification & Career Growth</h3>
-                    <div style="background: #f8f9fa; padding: 12px; border-radius: 6px; border: 1px dashed #ccc; margin-bottom: 12px;">
-                        <span style="font-size: 13px; font-weight: bold; color: var(--dark);">🆔 NID কার্ড ভেরিফিকেশন প্যানেল</span>
-                        <label style="margin-top:5px;">NID কার্ডের সামনের পার্ট (Front Side):</label>
-                        <input type="file" id="nidFront" accept="image/*" style="padding:5px;">
-                        <label style="margin-top:2px;">NID কার্ডের পেছনের পার্ট (Back Side):</label>
-                        <input type="file" id="nidBack" accept="image/*" style="padding:5px;">
-                        <button onclick="verifyUserWithNid()" style="background:#16a085; margin-top:5px;">NID আপলোড ও ভেরিফাই করুন</button>
-                    </div>
-                    
-                    <div style="display:grid; grid-template-columns: 1fr; gap:10px;">
-                        <button onclick="takeSkillTest()" style="background:#34495e;">অফিসিয়াল স্কিল টেস্ট</button>
-                    </div>
-                    <button onclick="upgradeUser()" style="background:#d35400; margin-top:10px;">Pro Worker মেম্বারশিপ নিন (৳১০০)</button>
-                </div>
-            </div>
-
-            <div class="card" style="background: #f1f3f5;">
-                <h2 style="border:none; margin:0; padding:0;"><span style="color:var(--dark);">📋 Live Job Feed</span> (মার্কেটপ্লেস)</h2>
-                <p style="font-size:12px; color:#7f8c8d; margin-top:2px; margin-bottom:15px;">চলতি সকল লাইভ প্রজেক্টের রিয়েল-টাইম আপডেট:</p>
-                <div id="liveTaskFeed" style="max-height: 320px; overflow-y: auto;">কোনো কাজ লাইভ নেই...</div>
-            </div>
-        </div>
-
-        <div>
-            <div class="card">
-                <h2>💬 Contract Room (ইন-অ্যাপ চ্যাট)</h2>
-                <p style="font-size:12px; color:#95a5a6; margin-top:-10px;">সিকিউরিটি ফিল্টার সচল আছে। বাইরের তথ্য শেয়ার করা নিষেধ।</p>
-                <div class="chat-box" id="chatContainer"></div>
-                <div style="display:flex; gap:5px;">
-                    <input type="text" id="chatMsgInput" placeholder="মেসেজ লিখুন..." style="margin:0;">
-                    <button onclick="sendMessage()" style="width:auto; padding:0 20px;">পাঠান</button>
-                </div>
-            </div>
-
-            <div class="card" style="background: linear-gradient(135deg, #ffffff, #f9f9f9);">
-                <h2>👥 Referral & Earnings</h2>
-                <p style="font-size:13px; margin:0 0 10px 0;">আপনার বন্ধুদের আমন্ত্রণ জানিয়ে প্রত্যেক পেমেন্ট থেকে আজীবন ১% কমিশন লাভ করুন।</p>
-                <p style="font-size:13px;">আপনার কোড: <strong style="color:var(--primary-dark); font-size:15px;">SOHOZ-FAHAD-510</strong></p>
-                <input type="text" id="referralInput" placeholder="রেফারেল কোড এন্টার করুন" style="margin-bottom:10px;">
-                <button onclick="submitReferral()" style="background:#34495e;">কোড একটিভ করুন</button>
-            </div>
-        </div>
-
-    </div>
-
-    <div id="adminPanelCard" class="card hidden" style="background: #fff9db; border: 2px solid #f59f00;">
-        <h2>👨‍⚖️ ওয়েব অ্যাডমিন ড্যাশবোর্ড (Secure Admin Control)</h2>
-        <p>📊 <strong>কোম্পানির মোট নেট লাভ:</strong> <span id="companyEarnings" style="font-weight:bold; color:var(--admin-color); font-size:18px;">0</span> ৳</p>
-        
-        <fieldset style="border: 1px solid #f59f00; border-radius: 6px; padding: 15px; margin-bottom: 20px;">
-            <legend style="font-weight: bold; padding: 0 10px;">Dispute Case Manual Settlement</legend>
-            <div style="display:grid; grid-template-columns: 2fr 1fr 1fr; gap:10px; align-items:center;">
-                <input type="text" id="adminTaskId" placeholder="টাস্ক আইডি দিন..." style="margin:0;">
-                <label style="margin:0;"><input type="checkbox" id="agencyConf" checked> এজেন্সির সম্মতি</label>
-                <label style="margin:0;"><input type="checkbox" id="userConf" checked> ইউজারের সম্মতি</label>
-            </div>
-            <div style="display:flex; gap:10px; margin-top:15px;">
-                <button onclick="adminReleasePayment(true)" class="btn-admin">ফান্ড ম্যানুয়ালি রিলিজ করুন (৳)</button>
-                <button onclick="adminReleasePayment(false)" style="background:var(--danger);">টাকা রিফান্ড করুন (Refund to Agency)</button>
-            </div>
-        </fieldset>
-
-        <h3 style="margin-top:20px; color:var(--dark);">👥 All Registered Users History</h3>
-        <div style="overflow-x:auto;">
-            <table class="admin-table">
-                <thead>
-                    <tr>
-                        <th>Name</th>
-                        <th>Email</th>
-                        <th>Role</th>
-                        <th>Balance</th>
-                        <th>Verification</th>
-                        <th>Action</th>
-                    </tr>
-                </thead>
-                <tbody id="adminUserHistoryBody">
-                    </tbody>
-            </table>
-        </div>
-
-        <h3 style="margin-top:25px; color:var(--dark);">📋 All Marketplace Tasks History</h3>
-        <div style="overflow-x:auto;">
-            <table class="admin-table">
-                <thead>
-                    <tr>
-                        <th>Task ID</th>
-                        <th>Title</th>
-                        <th>Budget</th>
-                        <th>Status</th>
-                        <th>Posted By</th>
-                        <th>Action</th>
-                    </tr>
-                </thead>
-                <tbody id="adminTaskHistoryBody">
-                    </tbody>
-            </table>
-        </div>
-    </div>
-
-    <div class="card">
-        <h2>📂 Live Firebase NoSQL State</h2>
-        <p style="font-size:13px; color:#7f8c8d; margin-top:-10px;">রিয়েল-টাইমে ফায়ারবেস ডেটাবেজ অবজেক্টের স্ট্রাকচার পরিবর্তন ট্র্যাকিং:</p>
-        <pre id="jsonDisplay">Loading Live Firebase State...</pre>
-    </div>
-
-</div>
-
-<div id="adminAuthModal" class="modal-overlay hidden">
-    <div class="modal-content">
-        <h3 style="margin-top:0; color:var(--dark); text-align:center;">🔐 অ্যাডমিন প্যানেল অথেনটিকেশন</h3>
-        <p style="font-size:12px; color:#7f8c8d; text-align:center;">প্রশাসক ড্যাশবোর্ড আনলক করতে সিক্রেট ক্রেডেনশিয়াল দিন।</p>
-        
-        <label>Admin ID:</label>
-        <input type="text" id="modalAdminId" placeholder="আইডি লিখুন">
-        
-        <label>Admin Password:</label>
-        <input type="password" id="modalAdminPass" placeholder="পাসওয়ার্ড লিখুন">
-        
-        <div style="display:flex; gap:10px; margin-top:10px;">
-            <button onclick="submitAdminCredentials()" class="btn-admin">আনলক করুন</button>
-            <button onclick="closeAdminModal()" class="btn-secondary">বাতিল</button>
-        </div>
-    </div>
-</div>
-
-</body>
-</html>
